@@ -1,7 +1,6 @@
 pipeline {
     agent any
 
-
     stages {
 
         stage('Checkout Code') {
@@ -10,17 +9,16 @@ pipeline {
             }
         }
 
-    stage('Compile Java') {
-        steps {
-            sh '''
-                rm -rf build
-                mkdir build
-                javac -d build src/Hello.java
-                jar cfe hello.jar Hello -C build .
-            '''
+        stage('Compile Java') {
+            steps {
+                sh '''
+                    rm -rf build hello.jar package *.deb
+                    mkdir build
+                    javac -d build src/Hello.java
+                    jar cfe hello.jar Hello -C build .
+                '''
+            }
         }
-    }
-
 
         stage('Prepare Package Directory') {
             steps {
@@ -34,15 +32,21 @@ pipeline {
         stage('Build DEB using FPM') {
             steps {
                 sh '''
-                    fpm -s dir -t deb -n hello-java -v 1.0.${BUILD_NUMBER} --prefix=/ -C package
+                    fpm -s dir -t deb \
+                    -n hello-java \
+                    -v 1.0.${BUILD_NUMBER} \
+                    --architecture amd64 \
+                    --prefix=/ \
+                    -C package
+                    ls -lh *.deb
                 '''
             }
         }
     }
 
     post {
-        success {
-            archiveArtifacts artifacts: '*.deb'
+        always {
+            archiveArtifacts artifacts: '*.deb', fingerprint: true
         }
     }
 }
