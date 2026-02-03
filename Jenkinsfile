@@ -2,6 +2,12 @@ pipeline {
     agent any
 
     stages {
+        stage('Debug') {
+            steps {
+                echo 'Jenkinsfile is executing'
+                sh 'ls -la'
+            }
+        }
 
         stage('Checkout Code') {
             steps {
