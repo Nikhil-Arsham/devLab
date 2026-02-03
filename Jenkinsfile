@@ -1,29 +1,32 @@
 pipeline {
     agent any
 
-    environment {
-        APP_NAME = "hello-java"
-        VERSION  = "1.0.${BUILD_NUMBER}"
-    }
 
     stages {
 
-        stage('Compile Java') {
+        stage('Checkout Code') {
             steps {
-                sh '''
-                    rm -rf build package *.jar
-                    mkdir -p build
-                    javac -d build src/Hello.java
-                    jar cfe hello.jar Hello -C build .
-                '''
+                echo 'Code already checked out from Git'
             }
         }
 
-        stage('Prepare Package Layout') {
+    stage('Compile Java') {
+        steps {
+            sh '''
+                rm -rf build
+                mkdir build
+                javac -d build src/Hello.java
+                jar cfe hello.jar Hello -C build .
+            '''
+        }
+    }
+
+
+        stage('Prepare Package Directory') {
             steps {
                 sh '''
                     mkdir -p package/usr/local/bin
-                    cp hello.jar package/usr/local/bin/hello-java.jar
+                    cp hello.jar package/usr/local/bin/
                 '''
             }
         }
@@ -31,11 +34,7 @@ pipeline {
         stage('Build DEB using FPM') {
             steps {
                 sh '''
-                    fpm -s dir -t deb \
-                        -n ${APP_NAME} \
-                        -v ${VERSION} \
-                        --description "Hello Java app packaged via Jenkins and FPM" \
-                        package/
+                    fpm -s dir -t deb -n hello-java -v 1.0.${BUILD_NUMBER} --prefix=/ -C package
                 '''
             }
         }
@@ -43,7 +42,7 @@ pipeline {
 
     post {
         success {
-            archiveArtifacts artifacts: '*.deb', fingerprint: true
+            archiveArtifacts artifacts: '*.deb'
         }
     }
 }
